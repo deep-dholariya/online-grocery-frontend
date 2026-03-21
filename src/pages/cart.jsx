@@ -12,6 +12,7 @@ const Cart = () => {
   const [cartTotal, setCartTotal] = useState(0);
   const [cartId, setCartId] = useState(null);
   const [manualQty, setManualQty] = useState({});
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -208,22 +209,22 @@ const Cart = () => {
 
   };
 
-const decreaseQty = (item) => {
+  const decreaseQty = (item) => {
 
-  const step = parseFloat(item.minOrder);
-  const currentQty = parseFloat(item.quantity);
+    const step = parseFloat(item.minOrder);
+    const currentQty = parseFloat(item.quantity);
 
-  let newQty = parseFloat((currentQty - step).toFixed(2));
+    let newQty = parseFloat((currentQty - step).toFixed(2));
 
-  if (newQty < step) {
-    newQty = step;
-  }
+    if (newQty < step) {
+      newQty = step;
+    }
 
-  if (newQty === currentQty) return;
+    if (newQty === currentQty) return;
 
-  updateQuantity(item, newQty);
+    updateQuantity(item, newQty);
 
-};
+  };
 
   const removeItem = async (productId) => {
 
@@ -279,9 +280,153 @@ const decreaseQty = (item) => {
 
   };
 
+  // const placeOrder = async () => {
+
+  //   if (isPlacingOrder) return; // 🚨 duplicate stop
+  //   setIsPlacingOrder(true);
+  //   if (
+  //     !checkoutForm.fullName ||
+  //     !checkoutForm.phone ||
+  //     !checkoutForm.street ||
+  //     !checkoutForm.city ||
+  //     !checkoutForm.state ||
+  //     !checkoutForm.pincode
+  //   ) {
+  //     alert("Please fill all address fields");
+  //     return;
+  //   }
+
+  //   try {
+
+  //     if (checkoutForm.paymentMethod === "COD") {
+
+  //       await API.post("/orders/place", {
+  //         cartId,
+  //         paymentMethod: "COD",
+  //         address: checkoutForm
+  //       });
+
+  //       alert("Order placed successfully");
+
+  //       setShowCheckout(false);
+  //       fetchCart();
+  //       window.dispatchEvent(new Event("cartUpdated"));
+
+  //       return;
+  //     }
+
+  //     if (!window.Razorpay) {
+  //       alert("Razorpay SDK not loaded");
+  //       return;
+  //     }
+
+  //     const orderRes = await API.post("/orders/place", {
+  //       cartId,
+  //       paymentMethod: "ONLINE",
+  //       address: checkoutForm
+  //     });
+
+  //     const razorpayData = orderRes.data.razorpay;
+
+  //     if (!razorpayData) {
+  //       alert("Payment initialization failed");
+  //       return;
+  //     }
+
+  //     const options = {
+  //       key: import.meta.env.VITE_RAZORPAY_KEY,
+  //       amount: razorpayData.amount,
+  //       currency: razorpayData.currency,
+  //       order_id: razorpayData.orderId,
+
+  //       name: "Grocery Store",
+  //       description: "Order Payment",
+
+  //       prefill: {
+  //         name: checkoutForm.fullName,
+  //         contact: checkoutForm.phone
+  //       },
+
+  //       theme: {
+  //         color: "#16a34a"
+  //       },
+
+  //       modal: {
+  //         ondismiss: async function () {
+
+  //           await API.post("/orders/payment-failed", {
+  //             orderId: orderRes.data.orderId
+  //           });
+
+  //           alert("Payment cancelled");
+
+  //         }
+  //       },
+
+  //       handler: async function (response) {
+  //         try {
+
+  //           await API.post("/orders/verify-payment", {
+  //             orderId: orderRes.data.orderId,
+  //             razorpay_order_id: response.razorpay_order_id,
+  //             razorpay_payment_id: response.razorpay_payment_id,
+  //             razorpay_signature: response.razorpay_signature
+  //           });
+
+  //           alert("Payment successful");
+
+  //           setShowCheckout(false);
+  //           fetchCart();
+  //           window.dispatchEvent(new Event("cartUpdated"));
+
+  //         } catch (err) {
+
+  //           console.log("VERIFY ERROR:", err);
+
+  //           // 🔥 IMPORTANT fallback
+  //           await API.post("/orders/payment-failed", {
+  //             orderId: orderRes.data.orderId
+  //           });
+
+  //           alert("Payment verification failed");
+
+  //         }
+  //       }
+  //     };
+
+  //     const rzp = new window.Razorpay(options);
+
+  //     rzp.on("payment.failed", async function (response) {
+  //       try {
+
+  //         await API.post("/orders/payment-failed", {
+  //           orderId: orderRes.data.orderId
+  //         });
+
+  //       } catch (err) {
+  //         console.log("FAIL API ERROR:", err);
+  //       }
+
+  //       alert("Payment failed. Please try again.");
+  //     });
+  //     rzp.open();
+
+  //   } catch (error) {
+
+  //     console.log(error.response?.data);
+  //     alert(error.response?.data?.message || "Payment failed");
+
+  //   }
+
+  // };
+
   const placeOrder = async () => {
 
+    // 🚨 duplicate click stop
+    if (isPlacingOrder) return;
+    setIsPlacingOrder(true);
 
+    // ❗ validation ke case me reset karna zaruri hai
     if (
       !checkoutForm.fullName ||
       !checkoutForm.phone ||
@@ -291,6 +436,7 @@ const decreaseQty = (item) => {
       !checkoutForm.pincode
     ) {
       alert("Please fill all address fields");
+      setIsPlacingOrder(false); // ✅ important
       return;
     }
 
@@ -315,6 +461,7 @@ const decreaseQty = (item) => {
 
       if (!window.Razorpay) {
         alert("Razorpay SDK not loaded");
+        setIsPlacingOrder(false); // ✅ important
         return;
       }
 
@@ -328,6 +475,7 @@ const decreaseQty = (item) => {
 
       if (!razorpayData) {
         alert("Payment initialization failed");
+        setIsPlacingOrder(false); // ✅ important
         return;
       }
 
@@ -337,44 +485,33 @@ const decreaseQty = (item) => {
         currency: razorpayData.currency,
         order_id: razorpayData.orderId,
 
-        name: "Grocery Store",
-        description: "Order Payment",
+        handler: async function (response) {
+          try {
 
-        prefill: {
-          name: checkoutForm.fullName,
-          contact: checkoutForm.phone
-        },
+            await API.post("/orders/verify-payment", {
+              orderId: orderRes.data.orderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
 
-        theme: {
-          color: "#16a34a"
-        },
+            alert("Payment successful");
 
-        modal: {
-          ondismiss: async function () {
+            setShowCheckout(false);
+            fetchCart();
+            window.dispatchEvent(new Event("cartUpdated"));
+
+          } catch (err) {
 
             await API.post("/orders/payment-failed", {
               orderId: orderRes.data.orderId
             });
 
-            alert("Payment cancelled");
+            alert("Payment verification failed");
 
+          } finally {
+            setIsPlacingOrder(false); // ✅ IMPORTANT
           }
-        },
-
-        handler: async function (response) {
-
-          await API.post("/orders/verify-payment", {
-            orderId: orderRes.data.orderId,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature
-          });
-
-          alert("Payment successful");
-
-          setShowCheckout(false);
-          fetchCart();
-          window.dispatchEvent(new Event("cartUpdated"));
         }
       };
 
@@ -386,21 +523,22 @@ const decreaseQty = (item) => {
           orderId: orderRes.data.orderId
         });
 
-        alert("Payment failed. Please try again.");
+        alert("Payment failed");
 
+        setIsPlacingOrder(false); // ✅ IMPORTANT
       });
+
       rzp.open();
 
     } catch (error) {
 
-      console.log(error.response?.data);
-      alert(error.response?.data?.message || "Payment failed");
+      console.log(error);
+      alert("Something went wrong");
+
+      setIsPlacingOrder(false); // ✅ IMPORTANT
 
     }
-
-
   };
-
   return (
 
 
@@ -769,9 +907,11 @@ const decreaseQty = (item) => {
 
               <button
                 onClick={placeOrder}
-                className="px-4 py-2 rounded bg-green-600 text-white"
+                disabled={isPlacingOrder}
+                className={`px-4 py-2 rounded text-white ${isPlacingOrder ? "bg-gray-400 cursor-not-allowed" : "bg-green-600"
+                  }`}
               >
-                Place Order
+                {isPlacingOrder ? "Processing..." : "Place Order"}
               </button>
 
             </div>
