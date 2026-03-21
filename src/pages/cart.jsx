@@ -280,146 +280,6 @@ const Cart = () => {
 
   };
 
-  // const placeOrder = async () => {
-
-  //   if (isPlacingOrder) return; // 🚨 duplicate stop
-  //   setIsPlacingOrder(true);
-  //   if (
-  //     !checkoutForm.fullName ||
-  //     !checkoutForm.phone ||
-  //     !checkoutForm.street ||
-  //     !checkoutForm.city ||
-  //     !checkoutForm.state ||
-  //     !checkoutForm.pincode
-  //   ) {
-  //     alert("Please fill all address fields");
-  //     return;
-  //   }
-
-  //   try {
-
-  //     if (checkoutForm.paymentMethod === "COD") {
-
-  //       await API.post("/orders/place", {
-  //         cartId,
-  //         paymentMethod: "COD",
-  //         address: checkoutForm
-  //       });
-
-  //       alert("Order placed successfully");
-
-  //       setShowCheckout(false);
-  //       fetchCart();
-  //       window.dispatchEvent(new Event("cartUpdated"));
-
-  //       return;
-  //     }
-
-  //     if (!window.Razorpay) {
-  //       alert("Razorpay SDK not loaded");
-  //       return;
-  //     }
-
-  //     const orderRes = await API.post("/orders/place", {
-  //       cartId,
-  //       paymentMethod: "ONLINE",
-  //       address: checkoutForm
-  //     });
-
-  //     const razorpayData = orderRes.data.razorpay;
-
-  //     if (!razorpayData) {
-  //       alert("Payment initialization failed");
-  //       return;
-  //     }
-
-  //     const options = {
-  //       key: import.meta.env.VITE_RAZORPAY_KEY,
-  //       amount: razorpayData.amount,
-  //       currency: razorpayData.currency,
-  //       order_id: razorpayData.orderId,
-
-  //       name: "Grocery Store",
-  //       description: "Order Payment",
-
-  //       prefill: {
-  //         name: checkoutForm.fullName,
-  //         contact: checkoutForm.phone
-  //       },
-
-  //       theme: {
-  //         color: "#16a34a"
-  //       },
-
-  //       modal: {
-  //         ondismiss: async function () {
-
-  //           await API.post("/orders/payment-failed", {
-  //             orderId: orderRes.data.orderId
-  //           });
-
-  //           alert("Payment cancelled");
-
-  //         }
-  //       },
-
-  //       handler: async function (response) {
-  //         try {
-
-  //           await API.post("/orders/verify-payment", {
-  //             orderId: orderRes.data.orderId,
-  //             razorpay_order_id: response.razorpay_order_id,
-  //             razorpay_payment_id: response.razorpay_payment_id,
-  //             razorpay_signature: response.razorpay_signature
-  //           });
-
-  //           alert("Payment successful");
-
-  //           setShowCheckout(false);
-  //           fetchCart();
-  //           window.dispatchEvent(new Event("cartUpdated"));
-
-  //         } catch (err) {
-
-  //           console.log("VERIFY ERROR:", err);
-
-  //           // 🔥 IMPORTANT fallback
-  //           await API.post("/orders/payment-failed", {
-  //             orderId: orderRes.data.orderId
-  //           });
-
-  //           alert("Payment verification failed");
-
-  //         }
-  //       }
-  //     };
-
-  //     const rzp = new window.Razorpay(options);
-
-  //     rzp.on("payment.failed", async function (response) {
-  //       try {
-
-  //         await API.post("/orders/payment-failed", {
-  //           orderId: orderRes.data.orderId
-  //         });
-
-  //       } catch (err) {
-  //         console.log("FAIL API ERROR:", err);
-  //       }
-
-  //       alert("Payment failed. Please try again.");
-  //     });
-  //     rzp.open();
-
-  //   } catch (error) {
-
-  //     console.log(error.response?.data);
-  //     alert(error.response?.data?.message || "Payment failed");
-
-  //   }
-
-  // };
-
   const placeOrder = async () => {
 
     // 🚨 duplicate click stop
@@ -485,9 +345,23 @@ const Cart = () => {
         currency: razorpayData.currency,
         order_id: razorpayData.orderId,
 
+        modal: {
+          ondismiss: async function () {
+            try {
+              await API.post("/orders/payment-failed", {
+                orderId: orderRes.data.orderId
+              });
+              alert("Payment cancelled");
+            } catch (err) {
+              console.log(err);
+            } finally {
+              setIsPlacingOrder(false);
+            }
+          }
+        },
+
         handler: async function (response) {
           try {
-
             await API.post("/orders/verify-payment", {
               orderId: orderRes.data.orderId,
               razorpay_order_id: response.razorpay_order_id,
@@ -502,15 +376,13 @@ const Cart = () => {
             window.dispatchEvent(new Event("cartUpdated"));
 
           } catch (err) {
-
             await API.post("/orders/payment-failed", {
               orderId: orderRes.data.orderId
             });
 
             alert("Payment verification failed");
-
           } finally {
-            setIsPlacingOrder(false); // ✅ IMPORTANT
+            setIsPlacingOrder(false);
           }
         }
       };

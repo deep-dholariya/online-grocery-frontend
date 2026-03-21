@@ -2,7 +2,8 @@ import axios from "axios";
 
 // Create axios instance
 const API = axios.create({
-  baseURL: "https://grocery-store-backend-onat.onrender.com/api",
+  // baseURL: "https://grocery-store-backend-onat.onrender.com/api",
+  baseURL: "http://localhost:5000/api",
   withCredentials: true,
   timeout: 60000,
 });
