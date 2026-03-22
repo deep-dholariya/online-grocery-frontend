@@ -31,6 +31,14 @@ function Login() {
       setOtpSent(false);
     }
   }, [timeLeft]);
+  useEffect(() => {
+    const hasShown = sessionStorage.getItem("adminAlertShown");
+
+    if (!hasShown) {
+      alert("9876543210 is an admin number and access is restricted.");
+      sessionStorage.setItem("adminAlertShown", "true");
+    }
+  }, []);
 
   const formatTime = () => {
     const minutes = Math.floor(timeLeft / 60);
@@ -41,10 +49,12 @@ function Login() {
   /* ================= SEND OTP ================= */
 
   const handleSendOtp = async () => {
+
     if (mobile.length !== 10) {
       alert("Please enter valid 10 digit mobile number");
       return;
     }
+
 
     try {
       setLoading(true);
@@ -132,6 +142,7 @@ function Login() {
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 px-4">
+
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
 
         <h2 className="text-3xl font-bold text-center text-gray-800">
@@ -167,8 +178,8 @@ function Login() {
               onClick={handleSendOtp}
               disabled={timeLeft > 0 || loading}
               className={`mt-3 text-sm font-medium ${timeLeft > 0
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-green-600 hover:underline"
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-green-600 hover:underline"
                 }`}
             >
               {otpSent
